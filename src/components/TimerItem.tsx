@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,8 +13,6 @@ type TimerItemProps = {
   remaining: number;
   isRunning: boolean;
 };
-
-// TODO: fix timer value and name changing logic
 
 export const TimerItem: React.FC<TimerItemProps> = ({
   id,
@@ -38,6 +36,23 @@ export const TimerItem: React.FC<TimerItemProps> = ({
   const nameInputRef = useRef<HTMLInputElement>(null);
   const timeInputRef = useRef<HTMLDivElement>(null);
 
+  const handleNameEdit = useCallback(() => {
+    if (editName.trim() !== '') {
+      editTimer(id, editName, duration);
+    }
+  }, [editName, id, duration, editTimer]);
+
+  const handleTimeEdit = useCallback(() => {
+    const newDuration =
+      parseInt(editHours || '0') * 3600 +
+      parseInt(editMinutes || '0') * 60 +
+      parseInt(editSeconds || '0');
+
+    if (newDuration > 0) {
+      editTimer(id, name, newDuration);
+    }
+  }, [editHours, editMinutes, editSeconds, id, name, editTimer]);
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -45,24 +60,28 @@ export const TimerItem: React.FC<TimerItemProps> = ({
         !nameInputRef.current.contains(event.target as Node)
       ) {
         handleNameEdit();
+        setIsEditingName(false);
       }
 
       if (
         timeInputRef.current &&
-        !timeInputRef.current.contains(event.target as Node) &&
-        isEditingTime
+        !timeInputRef.current.contains(event.target as Node)
       ) {
         handleTimeEdit();
+        setIsEditingTime(false);
       }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' || event.key === 'Enter') {
-        if (isEditingName) handleNameEdit();
-        if (isEditingTime) handleTimeEdit();
-
-        setIsEditingName(false);
-        setIsEditingTime(false);
+        if (isEditingName) {
+          handleNameEdit();
+          setIsEditingName(false);
+        }
+        if (isEditingTime) {
+          handleTimeEdit();
+          setIsEditingTime(false);
+        }
       }
     };
 
@@ -73,34 +92,7 @@ export const TimerItem: React.FC<TimerItemProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
-
-  const handleNameEdit = () => {
-    if (editName.trim() !== '') {
-      editTimer(id, editName, duration);
-    }
-  };
-
-  const handleTimeEdit = () => {
-    const newDuration =
-      parseInt(editHours || '0') * 3600 +
-      parseInt(editMinutes || '0') * 60 +
-      parseInt(editSeconds || '0');
-
-    if (newDuration > 0) {
-      editTimer(id, name, newDuration);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === 'Escape') {
-      if (isEditingTime) {
-        handleTimeEdit();
-      } else {
-        handleNameEdit();
-      }
-    }
-  };
+  }, [isEditingName, isEditingTime, handleNameEdit, handleTimeEdit]);
 
   return (
     <Card className='w-full transition-all duration-300 ease-in-out'>
@@ -116,7 +108,6 @@ export const TimerItem: React.FC<TimerItemProps> = ({
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               onBlur={handleNameEdit}
-              onKeyDown={handleKeyDown}
               className='mb-2'
             />
           ) : (
@@ -136,7 +127,6 @@ export const TimerItem: React.FC<TimerItemProps> = ({
                 placeholder='HH'
                 min='0'
                 max='23'
-                onKeyDown={handleKeyDown}
               />
               <Input
                 type='number'
@@ -145,7 +135,6 @@ export const TimerItem: React.FC<TimerItemProps> = ({
                 placeholder='MM'
                 min='0'
                 max='59'
-                onKeyDown={handleKeyDown}
               />
               <Input
                 type='number'
@@ -154,7 +143,6 @@ export const TimerItem: React.FC<TimerItemProps> = ({
                 placeholder='SS'
                 min='0'
                 max='59'
-                onKeyDown={handleKeyDown}
               />
             </div>
           ) : (
