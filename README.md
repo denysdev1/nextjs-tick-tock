@@ -2,6 +2,8 @@
 
 A modern, feature-rich timer and stopwatch application built with Next.js and TypeScript.
 
+[DEMO](https://nextjs-tick-tock.vercel.app/)
+
 ## Features
 
 - **Multiple Timers**
